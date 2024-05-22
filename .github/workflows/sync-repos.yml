@@ -1,0 +1,41 @@
+name: Sync Repos
+
+
+"on":
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  copy-repos:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Clone Repos
+        run: |
+          git clone . /tmp/temp_repo
+          cd /
+          git clone https://github.com/Asad-Rahim/git-scm.com-copy.git
+    sync-repos:
+      runs-on: ubuntu-20.04
+      steps:
+        - name: Run Sync
+          run: |
+            cd /tmp/tmp_repo/.github
+            python3 git-filter-repo --path README.md --path repo_settings/ --path util --force
+            cat .git/filter-repo/ref-map | grep -E '[0]{40} refs/tags' | cut -w -f 3 | sed -e 's/refs\/tags\///' | xargs git tag -d
+            cd /git-scm.com-copy
+            git checkout -b  sync-changes-${{ github.run_id }}
+            git remote add temp_repo /tmp/tmp_repo
+            git fetch temp_repo
+            git merge temp_repo/master --allow-unrelated-histories -m "Sync changes from git-repo-sync"
+            git push origin sync-changes-${{ github.run_id }}
+        - name: create PR
+          run: gh pr create -B main -H sync-changes-${{ github.run_id }} --title 'Merge branch_to_merge into base_branch' --body 'Created by Github action'
+
+          
