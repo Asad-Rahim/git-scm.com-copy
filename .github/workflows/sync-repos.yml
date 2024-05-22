@@ -27,6 +27,7 @@ jobs:
     steps:
       - name: Run Sync
         run: |
+          ls /tmp
           cd /tmp/temp_repo/.github
           python3 git-filter-repo --path README.md --path repo_settings/ --path util --force
           cat .git/filter-repo/ref-map | grep -E '[0]{40} refs/tags' | cut -w -f 3 | sed -e 's/refs\/tags\///' | xargs git tag -d
