@@ -12,6 +12,8 @@ jobs:
   sync-repos:
     runs-on: ubuntu-20.04
     steps:
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
@@ -33,6 +35,7 @@ jobs:
           git fetch temp_repo
           git merge temp_repo/master --allow-unrelated-histories -m "Sync changes from git-repo-sync"
           git push origin sync-changes-${{ github.run_id }}
+        
       - name: create PR
         run: gh pr create -B main -H sync-changes-${{ github.run_id }} --title 'Merge branch_to_merge into base_branch' --body 'Created by Github action'
 
