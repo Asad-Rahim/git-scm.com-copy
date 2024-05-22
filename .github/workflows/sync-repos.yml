@@ -9,7 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  copy-repos:
+  sync-repos:
+    needs: copy-repos
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout Code
@@ -21,10 +22,6 @@ jobs:
           git clone . /tmp/temp_repo
           cd /tmp
           git clone https://github.com/Asad-Rahim/git-scm.com-copy.git
-  sync-repos:
-    needs: copy-repos
-    runs-on: ubuntu-20.04
-    steps:
       - name: Run Sync
         run: |
           ls /tmp
