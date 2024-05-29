@@ -1,0 +1,46 @@
+name: Sync Repos
+
+
+"on":
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync-repos:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Git Setup
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'Asad-Rahim@users.noreply.github.com'
+      - name: Clone Repos
+        run: |
+          cd /tmp
+          git clone https://github.com/Asad-Rahim/git-scm.com-copy.git
+      - name: Run Sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwd
+          cd ./.github
+          python3 git-filter-repo --path README.md --path repo_settings/ --path util --force
+          cd /tmp/git-scm.com-copy
+          git checkout -b  sync-changes-${{ github.run_id }}
+          git remote add src_repo /home/runner/work/git-repo-sync/git-repo-sync
+          git fetch src_repo
+          git merge src_repo/master --allow-unrelated-histories -m "Sync changes from git-repo-sync"
+          echo "trying to access add other repos remote"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/Asad-Rahim/git-scm.com-copy
+          echo "trying to push changes"
+          git push origin sync-changes-${{ github.run_id }}   
+      - name: create PR
+        run: gh pr create -B main -H sync-changes-${{ github.run_id }} --title 'Merge branch_to_merge into base_branch' --body 'Created by Github action'
+
+        
